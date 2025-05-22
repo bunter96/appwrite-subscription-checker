@@ -3,24 +3,20 @@ name: Daily Subscription Check
 on:
   schedule:
     - cron: '*/5 * * * *'  # Runs every 5 minutes
-
+  workflow_dispatch:        # Allows manual triggering
 
 jobs:
   check-subscriptions:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
-
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-
       - name: Install dependencies
         run: npm install
-
       - name: Run script
         run: node check-subscriptions.js
         env:
@@ -28,3 +24,4 @@ jobs:
           APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
           APPWRITE_DATABASE_ID: ${{ secrets.APPWRITE_DATABASE_ID }}
+          APPWRITE_COLLECTION_ID: ${{ secrets.APPWRITE_COLLECTION_ID }}
