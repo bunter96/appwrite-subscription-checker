@@ -23,26 +23,24 @@ const sdk = require("node-appwrite");
 
     for (const user of users.documents) {
       totalChecked++;
-      const startDate = new Date(user.current_plan_start_date);
-      const expiryDate = new Date(startDate);
-      expiryDate.setMonth(expiryDate.getMonth() + 1);
 
+      const expiryDate = new Date(user.current_plan_expiry_date);
       const isExpired = expiryDate < now;
-      const isPremium = user.is_premium_user;
+      const isActive = user.is_active;
 
       console.log(`\n📄 User ${user.$id}`);
-      console.log(`   ├─ Start:   ${startDate.toISOString()}`);
-      console.log(`   ├─ Expiry:  ${expiryDate.toISOString()}`);
-      console.log(`   ├─ Premium: ${isPremium}`);
-      console.log(`   └─ Expired: ${isExpired}`);
+      console.log(`   ├─ Expiry Date: ${expiryDate.toISOString()}`);
+      console.log(`   ├─ Now:         ${now.toISOString()}`);
+      console.log(`   ├─ is_active:   ${isActive}`);
+      console.log(`   └─ Expired:     ${isExpired}`);
 
-      if (isExpired && isPremium) {
+      if (isExpired && isActive) {
         try {
           await database.updateDocument(dbId, collectionId, user.$id, {
-            is_premium_user: false,
+            is_active: false,
           });
           totalDowngraded++;
-          console.log(`   ✅ Premium removed.`);
+          console.log(`   ✅ Marked as inactive.`);
         } catch (err) {
           totalErrors++;
           console.error(`   ❌ Failed to update user ${user.$id}: ${err.message}`);
@@ -58,6 +56,6 @@ const sdk = require("node-appwrite");
 
   console.log(`\n📊 Summary:`);
   console.log(`   👥 Checked:   ${totalChecked}`);
-  console.log(`   🔻 Downgraded: ${totalDowngraded}`);
+  console.log(`   🔻 Inactivated: ${totalDowngraded}`);
   console.log(`   ❗ Errors:     ${totalErrors}`);
 })();
