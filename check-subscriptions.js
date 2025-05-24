@@ -19,43 +19,52 @@ const sdk = require("node-appwrite");
 
   try {
     const users = await database.listDocuments(dbId, collectionId);
-    console.log(`🔎 Found ${users.documents.length} users to check`);
+    console.log(`🔍 Found ${users.documents.length} user(s)`);
 
     for (const user of users.documents) {
       totalChecked++;
 
-      const expiryDate = new Date(user.current_plan_expiry_date);
-      const isExpired = expiryDate < now;
+      const expiry = user.current_plan_expiry_date
+        ? new Date(user.current_plan_expiry_date)
+        : null;
+      const isExpired = expiry && expiry < now;
       const isActive = user.is_active;
 
-      console.log(`\n📄 User ${user.$id}`);
-      console.log(`   ├─ Expiry Date: ${expiryDate.toISOString()}`);
-      console.log(`   ├─ Now:         ${now.toISOString()}`);
-      console.log(`   ├─ is_active:   ${isActive}`);
-      console.log(`   └─ Expired:     ${isExpired}`);
+      console.log(`\n📄 User: ${user.$id}`);
+      console.log(`   ├─ Expiry Date: ${expiry ? expiry.toISOString() : "null"}`);
+      console.log(`   ├─ is_active: ${isActive}`);
+      console.log(`   └─ Expired: ${isExpired}`);
 
       if (isExpired && isActive) {
         try {
           await database.updateDocument(dbId, collectionId, user.$id, {
             is_active: false,
+            current_active_plan: null,
+            char_allowed: null,
+            char_remaining: null,
+            current_plan_start_date: null,
+            current_plan_expiry_date: null,
+            active_product_id: null,
+            billing_cycle: null,
+            plan_type: null,
+            creem_customer_id: null,
+            creem_subscription_id: null,
           });
+
+          console.log(`   ✅ User downgraded and fields reset.`);
           totalDowngraded++;
-          console.log(`   ✅ Marked as inactive.`);
         } catch (err) {
+          console.error(`   ❌ Failed to downgrade user ${user.$id}:`, err.message);
           totalErrors++;
-          console.error(`   ❌ Failed to update user ${user.$id}: ${err.message}`);
         }
       } else {
         console.log(`   ✅ No action needed.`);
       }
     }
   } catch (err) {
-    console.error("❌ Failed to fetch user documents:", err.message);
+    console.error("❌ Failed to fetch users:", err.message);
     process.exit(1);
   }
 
-  console.log(`\n📊 Summary:`);
-  console.log(`   👥 Checked:   ${totalChecked}`);
-  console.log(`   🔻 Inactivated: ${totalDowngraded}`);
-  console.log(`   ❗ Errors:     ${totalErrors}`);
+  console.log(`\n📊 Done. Checked: ${totalChecked}, Downgraded: ${totalDowngraded}, Errors: ${totalErrors}`);
 })();
